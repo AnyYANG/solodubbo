@@ -12,6 +12,7 @@ import static cn.com.liuy.dubbo.ProxyBean.getBean;
 
 /**
  * 客户端
+ * @author
  */
 public class Client {
 

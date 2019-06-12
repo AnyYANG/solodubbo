@@ -21,21 +21,21 @@ import static cn.com.liuy.dubbo.ProxyBean.getBean;
  * 服务端
  */
 public class Server {
-    public static final String ZOOKEEPER_NODE_KAIKEBA="/solomon";
-    private Map<String,Class> serverMap = new HashMap<String,Class>();
+    public static final String ZOOKEEPER_NODE_KAIKEBA = "/solomon";
+    private Map<String, Class> serverMap = new HashMap<String, Class>();
     private ServerSocket serverSocket = null;
     private ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     private String serverName;
 
-    public void start(String address,int port,String serverName) throws IOException {
+    public void start(String address, int port, String serverName) throws IOException {
         serverSocket = new ServerSocket();
         serverSocket.setReuseAddress(true);
-        serverSocket.setReceiveBufferSize(1024*10);
-//        serverSocket.setSoTimeout(1000*20);
-        serverSocket.bind(new InetSocketAddress(address,port));
+        serverSocket.setReceiveBufferSize(1024 * 10);
+//      serverSocket.setSoTimeout(1000*20);
+        serverSocket.bind(new InetSocketAddress(address, port));
         Socket accept = null;
         System.out.println("服务已经开启");
-        while((accept = serverSocket.accept())!=null){
+        while ((accept = serverSocket.accept()) != null) {
             Socket finalAccept = accept;
             //开启多线程
             executorService.execute(() -> {
@@ -46,8 +46,8 @@ public class Server {
                     objectInputStream = new ObjectInputStream(finalAccept.getInputStream());
                     //输出流
                     objectOutputStream = new ObjectOutputStream(finalAccept.getOutputStream());
-                    while(true) {
-                        if(Thread.currentThread().isInterrupted()){
+                    while (true) {
+                        if (Thread.currentThread().isInterrupted()) {
                             break;
                         }
                         //类名
@@ -59,7 +59,7 @@ public class Server {
                         //方法参数值
                         Object[] values = (Object[]) objectInputStream.readObject();
                         //读取客户端传参
-                        Map<String,String> attchements = (Map<String, String>) objectInputStream.readObject();
+                        Map<String, String> attchements = (Map<String, String>) objectInputStream.readObject();
                         KaikebaRpcContext.getContext().setAttachments(attchements);
 
                         for (int i = 0; i < values.length; i++) {
@@ -96,13 +96,17 @@ public class Server {
                 } finally {
                     //关闭输入流
                     try {
-                        if(objectInputStream!=null)objectInputStream.close();
+                        if (objectInputStream != null) {
+                            objectInputStream.close();
+                        }
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                     //关闭输出流
                     try {
-                        if(objectOutputStream!=null)objectOutputStream.close();
+                        if (objectOutputStream != null){
+                            objectOutputStream.close();
+                        }
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -116,14 +120,14 @@ public class Server {
         serverSocket.close();
     }
 
-    public void register(String className,Class implementClass){
-        serverMap.put(className,implementClass);
+    public void register(String className, Class implementClass) {
+        serverMap.put(className, implementClass);
     }
 
     public static void main(String[] args) throws IOException, InterruptedException, KeeperException {
         CountDownLatch countDownLatch = new CountDownLatch(1);
-        ZooKeeper zooKeeper = new ZooKeeper("127.0.0.1:2181",1000*3, event -> {
-            if (event.getState()== Watcher.Event.KeeperState.SyncConnected) {
+        ZooKeeper zooKeeper = new ZooKeeper("127.0.0.1:2181", 1000 * 3, event -> {
+            if (event.getState() == Watcher.Event.KeeperState.SyncConnected) {
                 countDownLatch.countDown();
             }
         });
@@ -131,22 +135,22 @@ public class Server {
         /**
          * 跟节点不存在
          */
-        if(zooKeeper.exists(Server.ZOOKEEPER_NODE_KAIKEBA,false)==null){
-            zooKeeper.create(Server.ZOOKEEPER_NODE_KAIKEBA,"".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        if (zooKeeper.exists(Server.ZOOKEEPER_NODE_KAIKEBA, false) == null) {
+            zooKeeper.create(Server.ZOOKEEPER_NODE_KAIKEBA, "".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         }
         String serverNodeNameTmp = "kaikeba1";
         String sreverNodeAddress = "localhost:8989:weight=50";
         //向ZOOKEEPER注册服务
-        String nodepath = Server.ZOOKEEPER_NODE_KAIKEBA+"/"+serverNodeNameTmp;
-        if(zooKeeper.exists(nodepath,false)!=null){
-            zooKeeper.delete(nodepath,-1);
+        String nodepath = Server.ZOOKEEPER_NODE_KAIKEBA + "/" + serverNodeNameTmp;
+        if (zooKeeper.exists(nodepath, false) != null) {
+            zooKeeper.delete(nodepath, -1);
         }
-        zooKeeper.create(nodepath,sreverNodeAddress.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+        zooKeeper.create(nodepath, sreverNodeAddress.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
         Server server = new Server();
-                //注册服务
-                server.register(IOrder.class.getName(),IOrderImpl.class);
-                //开启服务
-                server.start("localhost",8989,serverNodeNameTmp);
+        //注册服务
+        server.register(IOrder.class.getName(), IOrderImpl.class);
+        //开启服务
+        server.start("localhost", 8989, serverNodeNameTmp);
 
     }
 }
