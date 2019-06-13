@@ -8,24 +8,26 @@ import org.apache.zookeeper.data.Stat;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+
 import static cn.com.liuy.dubbo.ProxyBean.getBean;
 
 /**
  * 客户端
+ *
  * @author
  */
 public class Client {
 
     public static void main(String[] args) throws IOException, InterruptedException, KeeperException {
         CountDownLatch countDownLatch = new CountDownLatch(1);
-        ZooKeeper zooKeeper = new ZooKeeper("127.0.0.1:2181",30*1000, event -> {
-            if (event.getState()== Watcher.Event.KeeperState.SyncConnected) {
+        ZooKeeper zooKeeper = new ZooKeeper("127.0.0.1:2181", 30 * 1000, event -> {
+            if (event.getState() == Watcher.Event.KeeperState.SyncConnected) {
                 countDownLatch.countDown();
             }
         });
         countDownLatch.await();
         List<String> children = zooKeeper.getChildren(Server.ZOOKEEPER_NODE_KAIKEBA, false);
-        int i =5;
+        int i = 5;
         //获得所有的临时子节点
         for (String child : children) {
             //获得子节点上上的统计数据
@@ -37,18 +39,18 @@ public class Client {
             //分割内容
             String[] split = value.split(":");
             //远程调用服务RPC
-            IOrder orderImplement = getBean(IOrder.class,split[0],Integer.parseInt(split[1]));
-            KaikebaRpcContext.getContext().setAttachment("user","zhangsan");
-            KaikebaRpcContext.getContext().setAttachment("password","123456");
-//            //调用返回结果
+            IOrder orderImplement = getBean(IOrder.class, split[0], Integer.parseInt(split[1]));
+            KaikebaRpcContext.getContext().setAttachment("user", "zhangsan");
+            KaikebaRpcContext.getContext().setAttachment("password", "123456");
+//           调用返回结果
             System.out.println(orderImplement.selectById(i++));
-//            //异步回调
-            KaikebaRpcContext.getContext().setAttachment("user","zhangsan");
-            KaikebaRpcContext.getContext().setAttachment("password","123456");
-            orderImplement.selectById(i,order -> {
-                System.out.println(order);
-                return "客户端返回的值";
-            });
+//           异步回调
+//            KaikebaRpcContext.getContext().setAttachment("user", "zhangsan");
+//            KaikebaRpcContext.getContext().setAttachment("password", "123456");
+//            orderImplement.selectById(i, order -> {
+//                System.out.println(order);
+//                return "客户端返回的值";
+//            });
         }
     }
 }

@@ -84,6 +84,7 @@ public class Server {
                         objectOutputStream.writeObject(KaikebaRpcContext.getServerContext().getAttachments());
                         objectOutputStream.flush();
                         //清楚上下文
+                        //noinspection AliAccessStaticViaInstance
                         KaikebaRpcContext.getContext().removeContext();
                         KaikebaRpcContext.getServerContext().removeServerContext();
                     }
